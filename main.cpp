@@ -12,6 +12,7 @@
 #include <fstream>
 #include <algorithm>
 #include <queue>
+#include <unordered_map>
 
 #include "model_loader.hpp"
 #include "bsp_map_loader.hpp"
@@ -31,11 +32,36 @@ std::queue<mouse_wheel_event> mouse_wheel_events;
 
 struct camera {
     glm::vec3 eye;
-    glm::vec3 target;
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
     glm::quat rotation = glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f));
 };
+
+struct movement_state {
+    bool move_forward = false;
+};
+
+std::unordered_map<int, std::function<void(movement_state&)> keymap_press;
+std::unordered_map<int, std::function<void(movement_state&)> keymap_release;
+
+struct actuator {
+    int key;
+
+    std::function<void(camera&)> act;
+};
+
+std::set<actuator> actuators;
+
+
+void printMat(glm::mat4  mat){
+  int i,j;
+  for (j=0; j<4; j++){
+    for (i=0; i<4; i++){
+    printf("%f ",mat[i][j]);
+  }
+  printf("\n");
+ }
+}
 
 int main(int argc, char** argv)
 {
@@ -55,14 +81,9 @@ int main(int argc, char** argv)
     }
 
     camera cam;
-    cam.target = glm::vec3(0.0f);
     cam.eye = glm::vec3(0.0f, 0.0f, -5000.0f);
 
-    glm::mat4 view_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5000.0f));
-    glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
-
     glm::mat4 projection_matrix = glm::perspective(56.25f, 16.0f / 10.0f, 0.1f, 10000.0f);
-    glm::mat4 model_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5000.0f));
 
     std::vector<vertex> ladybug_vertex_data;
     model_loader::load_model(model_path, ladybug_vertex_data);
@@ -108,6 +129,9 @@ int main(int argc, char** argv)
 
     const auto start = std::chrono::system_clock::now();
 
+    printMat(glm::mat4_cast(cam.rotation));
+    std::cout << std::endl;
+
     /* Loop until the user closes the window */
     while (glfwGetWindowParam(GLFW_OPENED))
     {
@@ -115,7 +139,7 @@ int main(int argc, char** argv)
         glColor3f(1.0f, 0.0f, 0.0f);
 
         glMatrixMode(GL_MODELVIEW);
-        glLoadMatrixf(glm::value_ptr(glm::translate(glm::mat4(1.0f), cam.eye) * glm::mat4_cast(cam.rotation)));
+        glLoadMatrixf(glm::value_ptr(glm::translate(glm::mat4_cast(cam.rotation), cam.eye)));
 
 //        glRotatef(std::chrono::duration_cast<std::chrono::milliseconds>
 //                  (std::chrono::system_clock::now()-start).count() / 50, 0.0f, 1.0f, 0.0f);
@@ -129,8 +153,8 @@ int main(int argc, char** argv)
 
         //glDrawArrays(GL_POINTS, 0, map.vertexes.size());
 
-                glVertexPointer(3, GL_FLOAT, sizeof(vertex), reinterpret_cast<GLvoid*>(ladybug_vertex_data.data()));
-                glDrawArrays(GL_POINTS, 0, ladybug_vertex_data.size());
+        glVertexPointer(3, GL_FLOAT, sizeof(vertex), reinterpret_cast<GLvoid*>(ladybug_vertex_data.data()));
+        glDrawArrays(GL_POINTS, 0, ladybug_vertex_data.size());
 
 //        static const int stride = sizeof(bsp::vertex); // BSP Vertex, not float[3]
 //        for(const bsp::face& curFace: map.faces) {
@@ -162,17 +186,17 @@ int main(int argc, char** argv)
             //const auto view_direction = glm::normalize(camera_look_at - camera);
 
             if (GLFW_PRESS == action) {
-                if ('W' == key) cam.eye += cam.rotation * glm::vec3(0.0f, 0.0f, 50.0f);
-                if ('S' == key) cam.eye -= cam.rotation * glm::vec3(0.0f, 0.0f, 50.0f);
+                if ('W' == key) cam.eye += glm::vec3(0.0f, 0.0f, 50.0f) * cam.rotation;
+                if ('S' == key) cam.eye -= glm::vec3(0.0f, 0.0f, 50.0f) * cam.rotation;
 
-                if ('A' == key) cam.eye += cam.rotation * glm::vec3(50.0f, 0.0f, 0.0f);
-                if ('D' == key) cam.eye -= cam.rotation * glm::vec3(50.0f, 0.0f, 0.0f);
+                if ('A' == key) cam.eye += glm::vec3(50.0f, 0.0f, 0.0f) * cam.rotation;
+                if ('D' == key) cam.eye -= glm::vec3(50.0f, 0.0f, 0.0f) * cam.rotation;
 
                 if ('Z' == key) cam.eye += cam.up * 50.0f;
                 if ('X' == key) cam.eye -= cam.up * 50.0f;
 
-                if ('Q' == key) cam.rotation = glm::quat( M_PI_4, glm::vec3(0.0f,  1.0f, 0.0f)) * cam.rotation;
-                if ('E' == key) cam.rotation = glm::quat(-M_PI_4, glm::vec3(0.0f,  1.0f, 0.0f)) * cam.rotation;
+                if ('Q' == key) cam.rotation = glm::rotate(cam.rotation, -M_PI_2, glm::vec3(0.0f,  1.0f, 0.0f) );
+                if ('E' == key) cam.rotation = glm::rotate(cam.rotation,  M_PI_2, glm::vec3(0.0f,  1.0f, 0.0f) );
             }
 
             key_events.pop();
