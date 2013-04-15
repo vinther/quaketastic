@@ -14,17 +14,25 @@ void draw_triangle()
     glEnd();
 }
 
+void mouse_pos_callback(int x, int y) {
+
+}
+
 int main()
 {
     /* Initialize the library */
     if (!glfwInit())
         return -1;
 
+    const int window_instance = glfwOpenWindow(640, 480, 8, 8, 8, 0, 24, 0, GLFW_WINDOW);
+
     /* Create a windowed mode window and its OpenGL context */
-    if (!glfwOpenWindow(640, 480, 8, 8, 8, 0, 24, 0, GLFW_WINDOW))
+    if (!window_instance)
         return -1;
 
     auto start = std::chrono::system_clock::now();
+
+    glfwSetMousePosCallback(mouse_pos_callback);
 
     /* Loop until the user closes the window */
     while (glfwGetWindowParam(GLFW_OPENED))
@@ -38,8 +46,12 @@ int main()
         glRotatef(std::chrono::duration_cast<std::chrono::milliseconds>
                   (std::chrono::system_clock::now()-start).count(), 0.0f, 0.0f, 1.0f);
 
+        draw_triangle();
+
         /* Swap front and back buffers and process events */
         glfwSwapBuffers();
+
+
     }
 
     glfwTerminate();
