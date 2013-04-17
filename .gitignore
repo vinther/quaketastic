@@ -13,3 +13,4 @@
 *.a
 
 CMakeLists.txt.user
+/maps/*
