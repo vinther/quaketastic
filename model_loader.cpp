@@ -7,7 +7,7 @@
 
 void model_loader::load_model(const std::string& path, std::vector<vertex>& vertex_data) {
   using std::vector;
-    using std::array;
+  using std::array;
   using std::string;
   using std::ifstream;
   using std::cout;

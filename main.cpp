@@ -18,6 +18,8 @@
 #include "model_loader.hpp"
 #include "bsp_map_loader.hpp"
 
+#include <lua5.1/lua.h>
+
 using namespace std;
 
 template<typename T, int size>
@@ -158,9 +160,9 @@ int main(int argc, char** argv)
     //glfwDisable(GLFW_MOUSE_CURSOR);
     glfwEnable(GLFW_KEY_REPEAT);
     glfwSetWindowTitle(window_title.c_str());
-    glfwSetKeyCallback([&](int key, int state) { key_events.emplace(key, state); });
-    glfwSetMouseButtonCallback([&](int button, int action) { mouse_button_events.emplace(button, action); });
-    glfwSetMouseWheelCallback([&](int pos) { mouse_wheel_events.emplace(pos); });
+    //glfwSetKeyCallback([&](int key, int state) { key_events.emplace(key, state); });
+    //glfwSetMouseButtonCallback([&](int button, int action) { mouse_button_events.emplace(button, action); });
+    //glfwSetMouseWheelCallback([&](int pos) { mouse_wheel_events.emplace(pos); });
 
 
 //    for (auto& x: map.vertexes) {
