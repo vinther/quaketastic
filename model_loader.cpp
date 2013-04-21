@@ -99,35 +99,47 @@ void model_loader::load_model(const std::string& path, std::vector<vertex>& vert
   //get_center_of_mass(model);
 }
 
-//void
-//model_loader::transform_indices(raw_model_data& model) {
-//  const glm::ivec3 triangle_transformation(-1, -1, -1);
-//  const glm::ivec4 quadangle_transformation(-1, -1, -1, -1);
+void model_loader::get_extrema(const std::vector<vertex>& vertex_data, glm::vec3& minimum, glm::vec3& maximum) {
+    const float min_float = std::numeric_limits<float>::lowest();
+    const float max_float = std::numeric_limits<float>::max();
 
-//  for (auto& triangle: model.triangle_data) {
-//    triangle += triangle_transformation;
-//  }
+    glm::vec4 temp_min = glm::vec4(max_float, max_float, max_float, 1.0f);
+    glm::vec4 temp_max = glm::vec4(min_float, min_float, min_float, 1.0f);
 
-//  for (auto& quadangle: model.quadangle_data) {
+    for (const auto& vertex: vertex_data) {
+      temp_min = glm::min(temp_min, vertex);
+      temp_max = glm::max(temp_max, vertex);
+    }
+
+    minimum = glm::vec3(temp_min.x, temp_min.y, temp_min.z);
+    maximum = glm::vec3(temp_max.x, temp_max.y, temp_max.z);
+}
+
+
+void model_loader::transform_vertices(const glm::vec3& minimum, const glm::vec3& maximum, std::vector<vertex>& vertex_data) {
+    const glm::ivec3 triangle_transformation(-1, -1, -1);
+    const glm::ivec4 quadangle_transformation(-1, -1, -1, -1);
+
+    const glm::vec4 temp_min = glm::vec4(minimum, 1.0f);
+
+
+    for (auto& vertex: vertex_data) {
+        vertex -= temp_min;
+    }
+
+    const glm::vec4 temp_max = glm::vec4(maximum, 1.0f) - temp_min;
+    const float max_dimension = glm::max(temp_max.x, glm::max(temp_max.y, temp_max.z));
+
+    for (auto& vertex: vertex_data) {
+        vertex /= max_dimension;
+    }
+
+//    for (auto& quadangle: model.quadangle_data) {
 //    quadangle += quadangle_transformation;
-//  }
-//}
+//    }
+}
 
-//void model_loader::get_global_extrema(raw_model_data& model) {
-//  const float min = std::numeric_limits<float>::lowest();
-//  const float max = std::numeric_limits<float>::max();
 
-//  vertex minimum(max, max, max, 1.0f);
-//  vertex maximum(min, min, min, 1.0f);
-
-//  for (const auto& vertex: model.vertex_data) {
-//    minimum = glm::min(minimum, vertex);
-//    maximum = glm::max(maximum, vertex);
-//  }
-
-//  model.minimum = minimum;
-//  model.maximum = maximum;
-//}
 
 //void
 //model_loader::get_center_of_mass(raw_model_data& model) {

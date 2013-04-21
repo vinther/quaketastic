@@ -35,19 +35,20 @@ std::queue<mouse_wheel_event> mouse_wheel_events;
 
 struct camera {
     glm::vec3 eye;
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 up;
 
-    glm::quat rotation = glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f));
+    glm::quat rotation;
 
     glm::vec3 translational_velocity;
     glm::quat rotational_velocity;
+
+    camera()
+        : up(glm::vec3(0.0f, 1.0f, 0.0f))
+        , rotation(glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f)))
+    {}
 };
 
-struct movement_state {
-    bool move_forward = false;
-};
-
-enum class movement_type : char {
+enum class control_type : char {
     TRANSLATE_FORWARDS,
     TRANSLATE_BACKWARDS,
     TRANSLATE_LEFT,
@@ -62,50 +63,47 @@ enum class movement_type : char {
     ROTATE_PITCH_NEG,
 };
 
-struct actuator {
-    glm::vec3 translational_velocity;
-    glm::quat rotational_velocity;
-};
+typedef std::pair<glm::vec3, glm::quat> actuator;
 
-std::unordered_map<int, movement_type> keymap {
-    {'W', movement_type::TRANSLATE_FORWARDS},
-    {'S', movement_type::TRANSLATE_BACKWARDS},
-    {'A', movement_type::TRANSLATE_LEFT},
-    {'D', movement_type::TRANSLATE_RIGHT},
-    {'Z', movement_type::TRANSLATE_DOWN},
-    {'X', movement_type::TRANSLATE_UP},
+std::unordered_map<int, control_type> keybindings {
+    {'W', control_type::TRANSLATE_FORWARDS},
+    {'S', control_type::TRANSLATE_BACKWARDS},
+    {'A', control_type::TRANSLATE_LEFT},
+    {'D', control_type::TRANSLATE_RIGHT},
+    {'Z', control_type::TRANSLATE_DOWN},
+    {'X', control_type::TRANSLATE_UP},
 
-    {'Q', movement_type::ROTATE_YAW_NEG},
-    {'E', movement_type::ROTATE_YAW_POS},
+    {'Q', control_type::ROTATE_YAW_NEG},
+    {'E', control_type::ROTATE_YAW_POS},
 
-    {GLFW_KEY_SPACE, movement_type::TRANSLATE_UP},
-    {GLFW_KEY_LSHIFT, movement_type::TRANSLATE_DOWN},
+    {GLFW_KEY_SPACE, control_type::TRANSLATE_UP},
+    {GLFW_KEY_LSHIFT, control_type::TRANSLATE_DOWN},
 };
 
 namespace std
 {
     template <>
-    struct hash<movement_type>
+    struct hash<control_type>
     {
-        size_t operator()(const movement_type& v) const
+        size_t operator()(const control_type& v) const
         {
             return hash<int>()(static_cast<int>(v));
         }
     };
 }
 
-std::unordered_map<movement_type, std::function<actuator(const camera&)>> movement_actions {
-    {movement_type::TRANSLATE_BACKWARDS, [](const camera& cam) { return actuator{glm::vec3(0.0f, 0.0f, -50.0f) * cam.rotation, glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f))}; }},
-    {movement_type::TRANSLATE_FORWARDS, [](const camera& cam) { return actuator{glm::vec3(0.0f, 0.0f, 50.0f) * cam.rotation, glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f))}; }},
-    {movement_type::TRANSLATE_LEFT, [](const camera& cam) { return actuator{glm::vec3(50.0f, 0.0f, 0.0f) * cam.rotation, glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f))}; }},
-    {movement_type::TRANSLATE_RIGHT, [](const camera& cam) { return actuator{glm::vec3(-50.0f, 0.0f, 0.0f) * cam.rotation, glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f))}; }},
-    {movement_type::TRANSLATE_DOWN, [](const camera& cam) { return actuator{cam.up * 50.0f, glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f))}; }},
-    {movement_type::TRANSLATE_UP, [](const camera& cam) { return actuator{-cam.up * 50.0f, glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f))}; }},
-    {movement_type::ROTATE_YAW_NEG, [](const camera& cam) { return actuator{glm::vec3(0.0f), glm::quat(-M_PI_4, glm::vec3(0.0f, 1.0f, 0.0f)) }; }},
-    {movement_type::ROTATE_YAW_POS, [](const camera& cam) { return actuator{glm::vec3(0.0f), glm::quat( M_PI_4, glm::vec3(0.0f, 1.0f, 0.0f)) }; }},
+std::unordered_map<control_type, std::function<actuator(const camera&)>> keybinding_actions {
+    {control_type::TRANSLATE_BACKWARDS, [](const camera& cam) { return actuator{glm::vec3(0.0f, 0.0f, -1.0f) * cam.rotation, glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f))}; }},
+    {control_type::TRANSLATE_FORWARDS, [](const camera& cam) { return actuator{glm::vec3(0.0f, 0.0f, 1.0f) * cam.rotation, glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f))}; }},
+    {control_type::TRANSLATE_LEFT, [](const camera& cam) { return actuator{glm::vec3(1.0f, 0.0f, 0.0f) * cam.rotation, glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f))}; }},
+    {control_type::TRANSLATE_RIGHT, [](const camera& cam) { return actuator{glm::vec3(-1.0f, 0.0f, 0.0f) * cam.rotation, glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f))}; }},
+    {control_type::TRANSLATE_DOWN, [](const camera& cam) { return actuator{cam.up * 1.0f, glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f))}; }},
+    {control_type::TRANSLATE_UP, [](const camera& cam) { return actuator{-cam.up * 1.0f, glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f))}; }},
+    {control_type::ROTATE_YAW_NEG, [](const camera& cam) { return actuator{glm::vec3(0.0f), glm::quat(-M_PI_4, glm::vec3(0.0f, 1.0f, 0.0f)) }; }},
+    {control_type::ROTATE_YAW_POS, [](const camera& cam) { return actuator{glm::vec3(0.0f), glm::quat( M_PI_4, glm::vec3(0.0f, 1.0f, 0.0f)) }; }},
 };
 
-std::unordered_set<movement_type> active_movements;
+std::unordered_set<control_type> active_keys;
 
 void printMat(const glm::mat4&  mat){
   int i,j;
@@ -113,7 +111,7 @@ void printMat(const glm::mat4&  mat){
     for (i=0; i<4; i++){
     printf("%f ",mat[i][j]);
   }
-  printf("\n");
+  printf("\n\n");
  }
 }
 
@@ -135,12 +133,22 @@ int main(int argc, char** argv)
     }
 
     camera cam;
-    cam.eye = glm::vec3(0.0f, 0.0f, -5000.0f);
+    cam.eye = glm::vec3(-0.5f, -0.5f, -5.0f);
 
     glm::mat4 projection_matrix = glm::perspective(56.25f, 16.0f / 10.0f, 0.1f, 10000.0f);
 
     std::vector<vertex> ladybug_vertex_data;
     model_loader::load_model(model_path, ladybug_vertex_data);
+
+    std::cout << "Done loading object with " << ladybug_vertex_data.size() << " vertices!" << std::endl;
+
+    glm::vec3 model_min, model_max;
+    model_loader::get_extrema(ladybug_vertex_data, model_min, model_max);
+    model_loader::transform_vertices(model_min, model_max, ladybug_vertex_data);
+    model_loader::get_extrema(ladybug_vertex_data, model_min, model_max);
+
+    cam.eye = (-model_max / 2.0f) - glm::vec3(0.0f, 0.0f, 10.0f);
+    cam.rotation = glm::quat(1.0f, glm::vec3(0.0f, 0.0f, 0.0f));
 
     bsp::map map;
     bsp::load_map(map_path, map);
@@ -187,16 +195,27 @@ int main(int argc, char** argv)
     std::cout << std::endl;
 
     /* Loop until the user closes the window */
+    float rot = 0.0f;
     while (glfwGetWindowParam(GLFW_OPENED))
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);     // Clear The Screen And The Depth Buffer
         glColor3f(1.0f, 0.0f, 0.0f);
 
         glMatrixMode(GL_MODELVIEW);
-        glLoadMatrixf(glm::value_ptr(glm::translate(glm::mat4_cast(cam.rotation), cam.eye)));
 
-//        glRotatef(std::chrono::duration_cast<std::chrono::milliseconds>
-//                  (std::chrono::system_clock::now()-start).count() / 50, 0.0f, 1.0f, 0.0f);
+        cam.rotation = glm::quat(2.0f, cam.up);//glm::rotate(cam.rotation, 0.1f, cam.up);
+        rot += 0.1f;
+
+        cam.rotation = glm::normalize(cam.rotation);
+
+        glm::mat4 ViewTranslate = glm::translate(glm::mat4(1.0f), cam.eye);
+        glm::mat4 ViewRotate = glm::mat4_cast(cam.rotation) ;//glm::rotate(glm::mat4(1.0f), rot, cam.up);//glm::mat4_cast(cam.rotation);
+        glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(glm::max(model_max.x, glm::max(model_max.y, model_max.z))));
+        glm::mat4 MVM =  ViewTranslate * ViewRotate * Model;
+
+        glLoadMatrixf(glm::value_ptr(MVM));
+
+//        glRotatef( / 50, 0.0f, 1.0f, 0.0f);
         //glTranslatef(camera_x, camera_y, camera_z);
 
         glEnableClientState(GL_VERTEX_ARRAY);
@@ -239,15 +258,15 @@ int main(int argc, char** argv)
             const int action = std::get<1>(event);
             //const auto view_direction = glm::normalize(camera_look_at - camera);
 
-            const auto& key_to_movement_iterator = keymap.find(key);
+            const auto& key_to_movement_iterator = keybindings.find(key);
 
-            if (std::end(keymap) != key_to_movement_iterator) {
+            if (std::end(keybindings) != key_to_movement_iterator) {
                 const auto& movement = key_to_movement_iterator->second;
 
                 if (GLFW_PRESS == action) {
-                    active_movements.insert(movement);
+                    active_keys.insert(movement);
                 } else if (GLFW_RELEASE == action) {
-                    active_movements.erase(movement);
+                    active_keys.erase(movement);
                 }
             }
 
@@ -257,22 +276,24 @@ int main(int argc, char** argv)
         glm::vec3 temp_translation(0.0f);
         glm::quat temp_rotation(1.0f, glm::vec3(0.0f));
 
-        for (const auto& movement: active_movements) {
-            const std::function<actuator(const camera&)>& func = movement_actions[movement];
+        for (const auto& movement: active_keys) {
+            const std::function<actuator(const camera&)>& func = keybinding_actions[movement];
 
             if (func) {
                 actuator act = func(cam);
 
-                temp_translation += act.translational_velocity;
-                temp_rotation = temp_rotation * act.rotational_velocity;
+                temp_translation += std::get<0>(act);
+                temp_rotation = temp_rotation * std::get<1>(act);
             }
         }
+
+        temp_rotation = glm::normalize(temp_rotation);
 
         cam.translational_velocity += temp_translation;
         cam.rotational_velocity = glm::quat_cast(glm::mat4_cast(cam.rotational_velocity) + glm::mat4_cast(temp_rotation));
 
-        cam.eye += cam.translational_velocity * 0.1f;
-        cam.rotation = glm::quat_cast(glm::mat4_cast(cam.rotation) + glm::mat4_cast(cam.rotational_velocity) * 0.01f);
+        cam.eye += cam.translational_velocity * 0.001f;
+        //cam.rotation = glm::quat_cast(glm::mat4_cast(cam.rotation) + glm::mat4_cast(temp_rotation) * 0.01f);
         cam.rotation = glm::normalize(cam.rotation);
 
         std::cout << cam.rotation.x << " " << cam.rotation.y << " " << cam.rotation.z << " " << cam.rotation.w << std::endl;

@@ -53,7 +53,8 @@ namespace model_loader {
 
 
   //void transform_indices(raw_model_data& model);
-  //void get_global_extrema(raw_model_data& model);
+  void get_extrema(const std::vector<vertex>& vertex_data, glm::vec3& minimun, glm::vec3& maximum);
+  void transform_vertices(const glm::vec3& minimum, const glm::vec3& maximum, std::vector<vertex>& vertex_data);
   //void get_center_of_mass(raw_model_data& model);
 }
 
