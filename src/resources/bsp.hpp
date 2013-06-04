@@ -3,6 +3,8 @@
 
 #include <memory>
 
+namespace qts {
+
 namespace bsp {
     struct direntry {
         int offset;
@@ -125,6 +127,8 @@ namespace bsp {
         int sz_vecs;
         unsigned char vecs[];
     };
+}
+
 }
 
 #endif // BSP_HPP

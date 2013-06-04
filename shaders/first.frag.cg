@@ -1,0 +1,18 @@
+struct C2E2f_Output {
+
+  float4 color : COLOR;
+
+};
+
+C2E2f_Output main(float4 color : COLOR)
+
+{
+
+  C2E2f_Output OUT;
+
+  OUT.color = color;
+
+  return OUT;
+
+}
+

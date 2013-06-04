@@ -3,6 +3,8 @@
 #include <fstream>
 #include <iostream>
 
+namespace qts {
+
 template<typename T>
 void load_lump(std::ifstream& file_stream, const size_t index, const bsp::direntry* const direntries, std::vector<T>& container) {
     const bsp::direntry& direntry = direntries[index];
@@ -13,22 +15,24 @@ void load_lump(std::ifstream& file_stream, const size_t index, const bsp::dirent
     file_stream.read(reinterpret_cast<char*>(container.data()), direntry.length);
 }
 
-void bsp::load_map(const std::string path, map &map) {
+
+bsp::map bsp_map_loader::load(const std::string path) {
+	bsp::map map;
+	bsp::header header;
+
     std::ifstream file_stream(path, std::ifstream::binary);
     std::vector<char> buffer(2048);
 
-    bsp::header header;
-
     if (!file_stream) {
-        return;
+        return map;
     }
 
     file_stream.read(reinterpret_cast<char*>(&header), sizeof(bsp::header));
 
-    map.entities.ents.reset(new char[header.direntries[0].length]);
+    map.map_entities.ents.reset(new char[header.direntries[0].length]);
 
     file_stream.seekg(header.direntries[0].offset);
-    file_stream.read(reinterpret_cast<char*>(map.entities.ents.get()), header.direntries[0].length);
+    file_stream.read(reinterpret_cast<char*>(map.map_entities.ents.get()), header.direntries[0].length);
 
     load_lump(file_stream, 1, header.direntries, map.textures);
     load_lump(file_stream, 2, header.direntries, map.planes);
@@ -47,4 +51,8 @@ void bsp::load_map(const std::string path, map &map) {
     load_lump(file_stream, 15, header.direntries, map.lightvols);
 
     file_stream.close();
+
+    return map;
+}
+
 }

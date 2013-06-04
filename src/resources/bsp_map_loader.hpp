@@ -6,8 +6,14 @@
 #include "bsp.hpp"
 #include "bsp_map.hpp"
 
-namespace bsp {
-    void load_map(const std::string path, map& map);
+namespace qts {
+
+struct bsp_map_loader{
+	typedef bsp::map type;
+
+	bsp::map load(const std::string path);
+};
+
 }
 
 #endif // BSP_MAP_LOADER_HPP

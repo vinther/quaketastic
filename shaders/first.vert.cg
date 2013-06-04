@@ -1,0 +1,44 @@
+
+ void main( float4 position : POSITION,
+            float3 normal   : NORMAL,
+                
+            out float4 o_position   : POSITION,
+            out float4 o_color      : COLOR,
+                
+            uniform float4x4 modelViewProj,
+            uniform float3 lightColor,
+            uniform float3 lightPosition,
+            uniform float3 eyePosition,
+            
+            uniform float3 Ke,
+            uniform float3 Ka,
+            uniform float3 Kd,
+            uniform float3 Ks)
+{
+  o_position = mul(modelViewProj, position);
+
+  float3 P = position.xyz;
+  float3 N = normal;
+
+  float3 emissive = Ke;
+  
+  float3 ambient = Ka * float3(1.0f, 1.0f, 1.0f);
+  
+  float3 L = normalize(lightPosition - P);
+  float diffuseLight = max(dot(N, L), 0);
+  float3 diffuse = Kd * lightColor * diffuseLight;
+  
+  // Compute the specular term
+  float3 V = normalize(eyePosition - P);
+  float3 H = normalize(L + V);
+  float specularLight = pow(max(dot(N, H), 0), 25.0f);
+  
+  if (diffuseLight <= 0) specularLight = 0;
+  float3 specular = Ks * lightColor * specularLight;
+
+  o_color.xyz = emissive + ambient + diffuse + specular;
+  o_color.w = 1;
+  
+  o_color.xyz += normal * 0.2f;
+
+}
